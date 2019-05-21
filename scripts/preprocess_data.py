@@ -4,7 +4,6 @@ import argparse, h5py, time, os
 import numpy as np
 from scipy.io import loadmat
 
-
 from ecog.signal_processing import resample
 from ecog.signal_processing import subtract_CAR
 from ecog.signal_processing import linenoise_notch
@@ -16,26 +15,14 @@ import nwbext_ecog
 from pynwb import NWBHDF5IO
 
 
-def main():
-
-    parser = argparse.ArgumentParser(description='Preprocessing ecog data.')
-    parser.add_argument('path', type=str, help="Path to the data")
-    parser.add_argument('subject', type=str, help="Subject code")
-    parser.add_argument('blocks', type=int, nargs='+',
-                        help="Block number eg: '1'")
-    parser.add_argument('-e', '--phase', default=False, action='store_true',
-                        help="Apply random phases to the hilbert transform.")
-    args = parser.parse_args()
-    print(args)
-
-    for block in args.blocks:
-        block_path = os.path.join(args.path, args.subject,
-                                  '{}_B{}.nwb'.format(args.subject, block))
-        transform(block_path, phase=args.phase)
+def main(path, subject, blocks, phase=False):
+    for block in blocks:
+        block_path = os.path.join(path, '{}_B{}.nwb'.format(subject, block))
+        transform(block_path, phase=phase)
 
 
-def transform(block_path, suffix=None, phase=False, total_channels=256,
-              seed=20180928):
+
+def transform(block_path, suffix=None, phase=False, seed=20180928):
     """
     Takes raw LFP data and does the standard hilb algorithm:
     1) CAR
@@ -81,8 +68,8 @@ def transform(block_path, suffix=None, phase=False, total_channels=256,
         assert rate < fs
         X = resample(X, rate, fs)
 
-    if X.shape[0] != total_channels:
-        raise ValueError(block_name, X.shape, total_channels)
+    #if X.shape[0] != total_channels:
+    #    raise ValueError(block_name, X.shape, total_channels)
 
     if bad_elects.sum() > 0:
         X[bad_elects] = np.nan
@@ -144,5 +131,17 @@ def transform(block_path, suffix=None, phase=False, total_channels=256,
     print('saved: {}'.format(AA_path))
 
 
+
+# If called from a command line, e.g.: $ python preprocess_data.py
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Preprocessing ecog data.')
+    parser.add_argument('path', type=str, help="Path to the data")
+    parser.add_argument('subject', type=str, help="Subject code")
+    parser.add_argument('blocks', type=int, nargs='+',
+                        help="Block number eg: '1'")
+    parser.add_argument('-e', '--phase', default=False, action='store_true',
+                        help="Apply random phases to the hilbert transform.")
+    args = parser.parse_args()
+    print(args)
+
+    main(path=args.path, subject=args.subject, blocks=args.blocks, phase=args.phase)
