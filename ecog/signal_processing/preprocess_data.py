@@ -101,6 +101,8 @@ def transform(block_path, suffix=None, phase=False, seed=20180928):
              X_analytic, X_fft_h = hilbert_transform(X, rate, kernel, phase=theta, X_fft_h=X_fft_h)
              Xp[ii] = abs(X_analytic).astype('float32')
 
+        # Scales signals back to Volt
+        X /= 1e6
 
         # Save preprocessed data and power estimate at NWB file
         # Create LFP data interface container
