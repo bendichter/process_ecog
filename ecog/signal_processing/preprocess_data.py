@@ -2,7 +2,6 @@ from __future__ import print_function, division
 
 import argparse, h5py, time, os
 import numpy as np
-from scipy.io import loadmat
 
 from ecog.signal_processing import resample
 from ecog.signal_processing import subtract_CAR
@@ -18,37 +17,42 @@ from pynwb.core import DynamicTable, DynamicTableRegion, VectorData
 from pynwb.misc import DecompositionSeries
 
 
-def preprocess_data(path, subject, blocks, phase=False):
+def preprocess_data(path, subject, blocks, bands='default', bands_vals=None):
     for block in blocks:
         block_path = os.path.join(path, '{}_B{}.nwb'.format(subject, block))
-        transform(block_path, phase=phase)
+        transform(block_path, bands='default', bands_vals=None)
 
 
-def transform(block_path, suffix=None, phase=False, seed=20180928):
+def transform(block_path, bands='default', bands_vals=None):
     """
-    Takes raw LFP data and does the standard hilb algorithm:
+    Takes raw LFP data and does the standard Hilbert algorithm:
     1) CAR
     2) notch filters
     3) Hilbert transform on different bands
-    ...
 
-    Saves to os.path.join(block_path, subject + '_B' + block + '_AA.h5')
+    Takes about 20 minutes to run on 1 10-min block.
 
     Parameters
     ----------
-    block_path
-    rate
-    cfs: filter center frequencies. If None, use Chang lab defaults
-    sds: filer standard deviations. If None, use Chang lab defaults
+    block_path : str
+        subject file path
+    bands: str, optional
+        Frequency bands to filter the signal.
+        'default' for Chang lab default values
+        'high_gamma' for 70~150 Hz
+        'custom' for user defined
+    bands_vals: 2D array, necessary only if bands='custom'
+        [2,nBands] numpy array with gaussian filter parameters, where:
+        bands_vals[1,:] = filter centers
+        bands_vals[2,:] = filter sigmas
 
-    takes about 20 minutes to run on 1 10-min block
+    Returns
+    -------
+    Saves preprocessed signals (LFP) and spectral power (DecompositionSeries) in
+    the current NWB file. Only if containers for these data do not exist in the
+    file.
     """
-
-    rng = None
-    if phase:
-        rng = np.random.RandomState(seed)
     rate = 400.
-
     cfs = bands.chang_lab['cfs']
     sds = bands.chang_lab['sds']
 
@@ -91,14 +95,10 @@ def transform(block_path, suffix=None, phase=False, seed=20180928):
         nSamples = X.shape[1]
         nBands = len(cfs)
         Xp = np.zeros((nBands, nChannels, nSamples))  #power (nBands,nChannels,nSamples)
-        theta = None
-        if phase:
-             theta = rng.rand(*X.shape) * 2. * np.pi
-             theta = np.sin(theta) + 1j * np.cos(theta)
         X_fft_h = None
         for ii, (cf, sd) in enumerate(zip(cfs, sds)):
              kernel = gaussian(X, rate, cf, sd)
-             X_analytic, X_fft_h = hilbert_transform(X, rate, kernel, phase=theta, X_fft_h=X_fft_h)
+             X_analytic, X_fft_h = hilbert_transform(X, rate, kernel, phase=None, X_fft_h=X_fft_h)
              Xp[ii] = abs(X_analytic).astype('float32')
 
         # Scales signals back to Volt
