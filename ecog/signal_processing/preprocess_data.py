@@ -41,7 +41,7 @@ def transform(block_path, filter='default', bands_vals=None):
         'default' for Chang lab default values (Gaussian filters)
         'high_gamma' for 70~150 Hz (Hamming filter)
         'custom' for user defined (Gaussian filters)
-    bands_vals: 2D array, necessary only if bands='custom'
+    bands_vals: 2D array, necessary only if filter='custom'
         [2,nBands] numpy array with Gaussian filter parameters, where:
         bands_vals[0,:] = filter centers [Hz]
         bands_vals[1,:] = filter sigmas [Hz]
