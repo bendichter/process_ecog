@@ -1,14 +1,10 @@
-import os
-
 import numpy as np
-
-from ecog.tokenize import transcripts
 
 
 __all__ = ['load_bad_times']
 
 
-def load_bad_times(block_path):
+def load_bad_times(nwb):
     """
     Load bad time segments.
 
@@ -19,24 +15,13 @@ def load_bad_times(block_path):
 
     Returns
     -------
-    bad_times : ndarray
+    bad_times : ndarray, (n_windows, 2)
         Pairs of start and stop times for bad segments.
     """
-
-    bad_times = []
-    try:
-        lab_time_conversion = transcripts.lab_time_conversion
-        with open(os.path.join(block_path, 'Artifacts',
-                               'bad_time_segments.lab'), 'rt') as f:
-            lines = f.readlines()
-            for line in lines:
-                if 'e' in line:
-                    start, stop = line.split(' ')[:2]
-                    bad_times.append([float(start)/lab_time_conversion,
-                                      float(stop)/lab_time_conversion])
-    except IOError:
-        return np.array([])
-
-    bad_times = np.array(bad_times)
-
+    times = nwb.invalid_times
+    bad_times = None
+    if times is not None:
+        start = nwb.invalid_times['start_time'].data[:]
+        stop = nwb.invalid_times['stop_time'].data[:]
+        bad_times = np.stack([start, stop], axis=1)
     return bad_times
