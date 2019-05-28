@@ -39,7 +39,6 @@ def transform(block_path, filter='default', bands_vals=None):
     filter: str, optional
         Frequency bands to filter the signal.
         'default' for Chang lab default values (Gaussian filters)
-        'high_gamma' for 70~150 Hz (Hamming filter)
         'custom' for user defined (Gaussian filters)
     bands_vals: 2D array, necessary only if filter='custom'
         [2,nBands] numpy array with Gaussian filter parameters, where:
@@ -59,9 +58,11 @@ def transform(block_path, filter='default', bands_vals=None):
     if filter=='default':
         band_param_0 = bands.chang_lab['cfs']
         band_param_1 = bands.chang_lab['sds']
-    elif filter=='high_gamma':
-        band_param_0 = [ bands.neuro['min_freqs'][-1] ]
-        band_param_1 = [ bands.neuro['max_freqs'][-1] ]
+    #elif filter=='high_gamma':
+        #band_param_0 = [ bands.neuro['min_freqs'][-1] ]  #for hamming window filter
+        #band_param_1 = [ bands.neuro['max_freqs'][-1] ]
+        #band_param_0 = bands.chang_lab['cfs'][29:37]      #for average of gaussian filters
+        #band_param_1 = bands.chang_lab['sds'][29:37]
     elif filter=='custom':
         band_param_0 = bands_vals[0,:]
         band_param_1 = bands_vals[1,:]
@@ -108,10 +109,10 @@ def transform(block_path, filter='default', bands_vals=None):
         Xp = np.zeros((nBands, nChannels, nSamples))  #power (nBands,nChannels,nSamples)
         X_fft_h = None
         for ii, (bp0, bp1) in enumerate(zip(band_param_0, band_param_1)):
-            if filter=='high_gamma':
-                kernel = hamming(X, rate, bp0, bp1)
-            else:
-                kernel = gaussian(X, rate, bp0, bp1)
+            #if filter=='high_gamma':
+            #    kernel = hamming(X, rate, bp0, bp1)
+            #else:
+            kernel = gaussian(X, rate, bp0, bp1)
             X_analytic, X_fft_h = hilbert_transform(X, rate, kernel, phase=None, X_fft_h=X_fft_h)
             Xp[ii] = abs(X_analytic).astype('float32')
 
