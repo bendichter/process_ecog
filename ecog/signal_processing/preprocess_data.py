@@ -141,7 +141,7 @@ def transform(block_path, filter='default', bands_vals=None):
                                                         region=np.arange(nChannels).tolist(),
                                                         description='')
             lfp_ts = lfp.create_electrical_series(name='preprocessed',
-                                                  data=X,
+                                                  data=X.T,
                                                   electrodes=elecs_region,
                                                   rate=rate,
                                                   description='')
