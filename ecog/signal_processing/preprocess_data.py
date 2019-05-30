@@ -100,7 +100,9 @@ def transform(block_path, filter='default', bands_vals=None):
             print('rates {}: {} {}'.format(block_name, rate, fs))
             if not np.allclose(rate, fs):
                 assert rate < fs
+                start = time.time()
                 X = resample(X, rate, fs)
+                print('resample time for {}: {} seconds'.format(block_name, time.time() - start))
 
             if bad_elects.sum() > 0:
                 X[bad_elects] = np.nan
@@ -108,14 +110,12 @@ def transform(block_path, filter='default', bands_vals=None):
             # Subtract CAR
             start = time.time()
             X = subtract_CAR(X)
-            print('CAR subtract time for {}: {} seconds'.format(block_name,
-                                                                time.time() - start))
+            print('CAR subtract time for {}: {} seconds'.format(block_name, time.time() - start))
 
             # Apply Notch filters
             start = time.time()
             X = linenoise_notch(X, rate)
-            print('Notch filter time for {}: {} seconds'.format(block_name,
-                                                                time.time() - start))
+            print('Notch filter time for {}: {} seconds'.format(block_name, time.time() - start))
 
 
             lfp = LFP()
